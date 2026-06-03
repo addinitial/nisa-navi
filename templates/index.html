@@ -1,0 +1,317 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>NISAナビ — 新NISA診断</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <style>
+    * { font-family: 'Noto Sans JP', sans-serif; }
+
+    body {
+      background: linear-gradient(160deg, #eff6ff 0%, #ffffff 50%, #eff6ff 100%);
+      min-height: 100vh;
+    }
+
+    /* ステップドット */
+    .dot { width: 8px; height: 8px; border-radius: 50%; background: #dbeafe; transition: all 0.3s; }
+    .dot.active { width: 24px; border-radius: 4px; background: #2563eb; }
+    .dot.done { background: #2563eb; }
+
+    /* 選択肢カード */
+    .choice {
+      border: 2px solid #e5e7eb;
+      border-radius: 16px;
+      padding: 16px 20px;
+      cursor: pointer;
+      transition: all 0.15s;
+      background: white;
+      text-align: left;
+      width: 100%;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+    .choice:hover { border-color: #60a5fa; background: #eff6ff; transform: translateY(-1px); }
+    .choice.selected { border-color: #2563eb; background: #eff6ff; }
+    .choice.selected .check { opacity: 1; }
+    .check { opacity: 0; transition: opacity 0.15s; color: #2563eb; font-size: 18px; margin-left: auto; flex-shrink: 0; }
+
+    /* ステップ */
+    .step { display: none; animation: slideIn 0.3s ease; }
+    .step.active { display: block; }
+    @keyframes slideIn { from { opacity: 0; transform: translateX(16px); } to { opacity: 1; transform: translateX(0); } }
+
+    /* ボタン */
+    .btn-primary {
+      background: linear-gradient(135deg, #2563eb, #1d4ed8);
+      color: white; border-radius: 14px; padding: 16px;
+      font-weight: 700; font-size: 16px; width: 100%;
+      transition: all 0.2s; border: none; cursor: pointer;
+      box-shadow: 0 4px 14px rgba(37,99,235,0.3);
+    }
+    .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(37,99,235,0.4); }
+    .btn-primary:disabled { background: #e5e7eb; box-shadow: none; color: #9ca3af; cursor: not-allowed; }
+
+    .btn-back {
+      background: white; color: #6b7280; border: 2px solid #e5e7eb;
+      border-radius: 14px; padding: 16px 20px; font-weight: 500;
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-back:hover { border-color: #2563eb; color: #2563eb; }
+
+    /* ローディング */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner { animation: spin 1s linear infinite; }
+
+    /* 結果 */
+    #result-section { display: none; }
+    .result-card { background: white; border-radius: 20px; padding: 24px; margin-bottom: 16px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); }
+
+    /* 証券会社バッジ */
+    .badge { display: inline-block; font-size: 11px; font-weight: 700; padding: 3px 8px; border-radius: 20px; }
+
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    .fade-up { animation: fadeUp 0.5s ease forwards; }
+
+    /* シェアボタン */
+    .btn-share {
+      background: #000; color: white; border-radius: 14px;
+      padding: 14px 24px; font-weight: 700; font-size: 15px;
+      cursor: pointer; transition: all 0.2s; border: none;
+      display: flex; align-items: center; gap: 8px; justify-content: center;
+    }
+    .btn-share:hover { background: #1a1a1a; transform: translateY(-1px); }
+
+    .star { color: #f59e0b; }
+  </style>
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header style="padding: 20px 20px 0;">
+    <div style="max-width: 480px; margin: 0 auto; display: flex; align-items: center; gap: 10px;">
+      <div style="width: 36px; height: 36px; background: linear-gradient(135deg,#2563eb,#1d4ed8); border-radius: 10px; display:flex; align-items:center; justify-content:center;">
+        <span style="color:white; font-weight:900; font-size:16px;">N</span>
+      </div>
+      <span style="font-weight:700; color:#111827; font-size:17px;">NISAナビ</span>
+      <span style="margin-left:auto; font-size:12px; color:#6b7280; background:#f3f4f6; padding:4px 10px; border-radius:20px;">無料診断</span>
+    </div>
+  </header>
+
+  <main style="max-width: 480px; margin: 0 auto; padding: 24px 20px 40px;">
+
+    <!-- 診断セクション -->
+    <div id="quiz-section">
+
+      <!-- ステップドット -->
+      <div style="display:flex; align-items:center; gap:6px; margin-bottom:28px;" id="dots">
+        <div class="dot active" id="dot-1"></div>
+        <div class="dot" id="dot-2"></div>
+        <div class="dot" id="dot-3"></div>
+        <div class="dot" id="dot-4"></div>
+        <div class="dot" id="dot-5"></div>
+        <span style="margin-left:auto; font-size:13px; color:#9ca3af;" id="step-counter">1 / 5</span>
+      </div>
+
+      <!-- STEP 1 -->
+      <div class="step active" id="step-1">
+        <p style="font-size:13px; color:#2563eb; font-weight:700; margin-bottom:8px; letter-spacing:0.05em;">STEP 01</p>
+        <h2 style="font-size:22px; font-weight:900; color:#111827; margin-bottom:6px; line-height:1.3;">年齢を教えてください</h2>
+        <p style="font-size:14px; color:#6b7280; margin-bottom:24px;">NISA戦略は年齢によって変わります</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="choice" data-key="age" data-val="20代"><span style="font-size:22px;">🌱</span><span style="font-weight:600; color:#111827;">20代</span><span class="check">✓</span></button>
+          <button class="choice" data-key="age" data-val="30代"><span style="font-size:22px;">🚀</span><span style="font-weight:600; color:#111827;">30代</span><span class="check">✓</span></button>
+          <button class="choice" data-key="age" data-val="40代"><span style="font-size:22px;">💼</span><span style="font-weight:600; color:#111827;">40代</span><span class="check">✓</span></button>
+          <button class="choice" data-key="age" data-val="50代以上"><span style="font-size:22px;">🏡</span><span style="font-weight:600; color:#111827;">50代以上</span><span class="check">✓</span></button>
+        </div>
+      </div>
+
+      <!-- STEP 2 -->
+      <div class="step" id="step-2">
+        <p style="font-size:13px; color:#2563eb; font-weight:700; margin-bottom:8px; letter-spacing:0.05em;">STEP 02</p>
+        <h2 style="font-size:22px; font-weight:900; color:#111827; margin-bottom:6px; line-height:1.3;">毎月いくら積み立てられそう？</h2>
+        <p style="font-size:14px; color:#6b7280; margin-bottom:24px;">生活費を引いたあとのざっくりの目安でOK</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="choice" data-key="monthly" data-val="〜1万円"><span style="font-size:22px;">☕</span><div><span style="font-weight:700; color:#111827; display:block;">〜1万円</span><span style="font-size:12px; color:#9ca3af;">コーヒー代を節約するくらい</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="monthly" data-val="1〜3万円"><span style="font-size:22px;">🎵</span><div><span style="font-weight:700; color:#111827; display:block;">1〜3万円</span><span style="font-size:12px; color:#9ca3af;">無理なく続けられる額</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="monthly" data-val="3〜5万円"><span style="font-size:22px;">💪</span><div><span style="font-weight:700; color:#111827; display:block;">3〜5万円</span><span style="font-size:12px; color:#9ca3af;">本気モードで増やしたい</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="monthly" data-val="5万円以上"><span style="font-size:22px;">🔥</span><div><span style="font-weight:700; color:#111827; display:block;">5万円以上</span><span style="font-size:12px; color:#9ca3af;">フル活用で最速で増やす</span></div><span class="check">✓</span></button>
+        </div>
+      </div>
+
+      <!-- STEP 3 -->
+      <div class="step" id="step-3">
+        <p style="font-size:13px; color:#2563eb; font-weight:700; margin-bottom:8px; letter-spacing:0.05em;">STEP 03</p>
+        <h2 style="font-size:22px; font-weight:900; color:#111827; margin-bottom:6px; line-height:1.3;">何のために増やしたい？</h2>
+        <p style="font-size:14px; color:#6b7280; margin-bottom:24px;">ゴールによってベストな戦略が変わります</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="choice" data-key="goal" data-val="老後の生活資金"><span style="font-size:22px;">🏖️</span><div><span style="font-weight:700; color:#111827; display:block;">老後の安心のため</span><span style="font-size:12px; color:#9ca3af;">将来ゆっくり生きるために</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="goal" data-val="子どもの教育費"><span style="font-size:22px;">🎓</span><div><span style="font-weight:700; color:#111827; display:block;">子どもの教育費</span><span style="font-size:12px; color:#9ca3af;">10〜15年後に使いたい</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="goal" data-val="住宅購入の頭金"><span style="font-size:22px;">🏠</span><div><span style="font-weight:700; color:#111827; display:block;">マイホームの頭金</span><span style="font-size:12px; color:#9ca3af;">5〜10年後を目標に</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="goal" data-val="資産をどんどん増やしたい"><span style="font-size:22px;">📈</span><div><span style="font-weight:700; color:#111827; display:block;">とにかく資産を増やしたい</span><span style="font-size:12px; color:#9ca3af;">いつ使うかは決めてない</span></div><span class="check">✓</span></button>
+        </div>
+      </div>
+
+      <!-- STEP 4 -->
+      <div class="step" id="step-4">
+        <p style="font-size:13px; color:#2563eb; font-weight:700; margin-bottom:8px; letter-spacing:0.05em;">STEP 04</p>
+        <h2 style="font-size:22px; font-weight:900; color:#111827; margin-bottom:6px; line-height:1.3;">価格が下がっても大丈夫？</h2>
+        <p style="font-size:14px; color:#6b7280; margin-bottom:24px;">正直に答えるほど、診断精度が上がります</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="choice" data-key="risk" data-val="元本割れはとにかく嫌"><span style="font-size:22px;">😰</span><div><span style="font-weight:700; color:#111827; display:block;">元本割れは絶対に嫌</span><span style="font-size:12px; color:#9ca3af;">少しでも減ったら不安になる</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="risk" data-val="少し減るのは許容できる"><span style="font-size:22px;">🙂</span><div><span style="font-weight:700; color:#111827; display:block;">少しなら許容できる</span><span style="font-size:12px; color:#9ca3af;">10%くらいなら我慢できる</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="risk" data-val="20〜30%の下落でも長期で持ち続けられる"><span style="font-size:22px;">💪</span><div><span style="font-weight:700; color:#111827; display:block;">大きく下がっても気にしない</span><span style="font-size:12px; color:#9ca3af;">長期で見ればいいと思ってる</span></div><span class="check">✓</span></button>
+        </div>
+      </div>
+
+      <!-- STEP 5 -->
+      <div class="step" id="step-5">
+        <p style="font-size:13px; color:#2563eb; font-weight:700; margin-bottom:8px; letter-spacing:0.05em;">STEP 05</p>
+        <h2 style="font-size:22px; font-weight:900; color:#111827; margin-bottom:6px; line-height:1.3;">投資の経験はある？</h2>
+        <p style="font-size:14px; color:#6b7280; margin-bottom:24px;">経験に合った説明にカスタマイズします</p>
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          <button class="choice" data-key="experience" data-val="まったくない"><span style="font-size:22px;">🔰</span><div><span style="font-weight:700; color:#111827; display:block;">これが初めて</span><span style="font-size:12px; color:#9ca3af;">投資はほぼ初心者</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="experience" data-val="少しある（旧NISAやiDeCoなど）"><span style="font-size:22px;">📚</span><div><span style="font-weight:700; color:#111827; display:block;">少しだけある</span><span style="font-size:12px; color:#9ca3af;">旧NISA・iDeCoは使ってた</span></div><span class="check">✓</span></button>
+          <button class="choice" data-key="experience" data-val="株や投資信託を自分で選んで運用している"><span style="font-size:22px;">📊</span><div><span style="font-weight:700; color:#111827; display:block;">自分で運用している</span><span style="font-size:12px; color:#9ca3af;">株・投信を日常的に触っている</span></div><span class="check">✓</span></button>
+        </div>
+      </div>
+
+      <!-- ナビボタン -->
+      <div style="display:flex; gap:10px; margin-top:24px;">
+        <button class="btn-back" id="btn-back" onclick="prevStep()" style="display:none;">← 戻る</button>
+        <button class="btn-primary" id="btn-next" onclick="nextStep()" disabled>次へ</button>
+      </div>
+
+    </div>
+
+    <!-- ローディング -->
+    <div id="loading-section" style="display:none; text-align:center; padding:60px 0;">
+      <div style="width:64px; height:64px; margin:0 auto 20px; position:relative;">
+        <svg class="spinner" width="64" height="64" viewBox="0 0 64 64" fill="none">
+          <circle cx="32" cy="32" r="28" stroke="#dbeafe" stroke-width="6"/>
+          <path d="M32 4 A28 28 0 0 1 60 32" stroke="#2563eb" stroke-width="6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <h3 style="font-size:18px; font-weight:800; color:#111827; margin-bottom:8px;">AIが分析中...</h3>
+      <p style="font-size:14px; color:#9ca3af;">あなた専用のプランを作っています</p>
+    </div>
+
+    <!-- 結果セクション -->
+    <div id="result-section">
+
+      <!-- ヒーロー -->
+      <div style="background: linear-gradient(135deg,#2563eb,#1d4ed8); border-radius:20px; padding:24px; margin-bottom:16px; color:white;">
+        <p style="font-size:12px; opacity:0.8; margin-bottom:4px; font-weight:600; letter-spacing:0.08em;">NISA診断レポート</p>
+        <h2 style="font-size:22px; font-weight:900; margin-bottom:0;">あなた専用の<br>NISA設定が出ました 🎉</h2>
+      </div>
+
+      <!-- AI診断結果 -->
+      <div class="result-card fade-up">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:16px;">
+          <span style="font-size:20px;">🎯</span>
+          <span style="font-weight:800; color:#111827; font-size:16px;">あなたへの診断結果</span>
+        </div>
+        <div id="ai-result" style="font-size:14px; line-height:1.8; color:#374151; white-space:pre-wrap;"></div>
+      </div>
+
+      <!-- 証券会社比較 -->
+      <div class="result-card fade-up" style="animation-delay:0.1s;">
+        <div style="display:flex; align-items:center; gap:8px; margin-bottom:6px;">
+          <span style="font-size:20px;">🏦</span>
+          <span style="font-weight:800; color:#111827; font-size:16px;">おすすめ証券会社</span>
+        </div>
+        <p style="font-size:11px; color:#9ca3af; margin-bottom:16px;">※広告を含みます。手数料・サービス内容を公平に比較しています。</p>
+
+        <!-- SBI -->
+        <div style="border:2px solid #2563eb; border-radius:14px; padding:16px; margin-bottom:10px; background:#eff6ff;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <div style="width:36px; height:36px; background:linear-gradient(135deg,#f97316,#ea580c); border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:13px;">SBI</div>
+            <div>
+              <div style="font-weight:800; color:#111827; font-size:15px;">SBI証券</div>
+              <span class="badge" style="background:#dbeafe; color:#1d4ed8;">初心者に最適</span>
+            </div>
+            <div style="margin-left:auto; text-align:right;">
+              <div style="font-size:13px; font-weight:700; color:#111827;">投資信託</div>
+              <div style="font-size:12px; color:#2563eb; font-weight:700;">手数料 無料</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:4px; margin-bottom:12px;">
+            <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span>
+          </div>
+          <a href="#" style="display:block; background:linear-gradient(135deg,#2563eb,#1d4ed8); color:white; text-align:center; padding:12px; border-radius:10px; font-weight:700; font-size:14px; text-decoration:none;">
+            無料で口座開設（5分） →
+          </a>
+        </div>
+
+        <!-- 楽天 -->
+        <div style="border:2px solid #e5e7eb; border-radius:14px; padding:16px; margin-bottom:10px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <div style="width:36px; height:36px; background:linear-gradient(135deg,#ef4444,#dc2626); border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:11px;">楽天</div>
+            <div>
+              <div style="font-weight:800; color:#111827; font-size:15px;">楽天証券</div>
+              <span class="badge" style="background:#fce7f3; color:#be185d;">楽天ユーザー向け</span>
+            </div>
+            <div style="margin-left:auto; text-align:right;">
+              <div style="font-size:13px; font-weight:700; color:#111827;">投資信託</div>
+              <div style="font-size:12px; color:#2563eb; font-weight:700;">手数料 無料</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:4px; margin-bottom:12px;">
+            <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span style="color:#e5e7eb;">★</span>
+          </div>
+          <a href="#" style="display:block; background:#dc2626; color:white; text-align:center; padding:12px; border-radius:10px; font-weight:700; font-size:14px; text-decoration:none;">
+            無料で口座開設（5分） →
+          </a>
+        </div>
+
+        <!-- 松井 -->
+        <div style="border:2px solid #e5e7eb; border-radius:14px; padding:16px;">
+          <div style="display:flex; align-items:center; gap:10px; margin-bottom:10px;">
+            <div style="width:36px; height:36px; background:linear-gradient(135deg,#3b82f6,#2563eb); border-radius:8px; display:flex; align-items:center; justify-content:center; color:white; font-weight:900; font-size:11px;">松井</div>
+            <div>
+              <div style="font-weight:800; color:#111827; font-size:15px;">松井証券</div>
+              <span class="badge" style="background:#dbeafe; color:#1d4ed8;">サポート充実</span>
+            </div>
+            <div style="margin-left:auto; text-align:right;">
+              <div style="font-size:13px; font-weight:700; color:#111827;">投資信託</div>
+              <div style="font-size:12px; color:#2563eb; font-weight:700;">手数料 無料</div>
+            </div>
+          </div>
+          <div style="display:flex; gap:4px; margin-bottom:12px;">
+            <span class="star">★</span><span class="star">★</span><span class="star">★</span><span class="star">★</span><span style="color:#e5e7eb;">★</span>
+          </div>
+          <a href="#" style="display:block; background:#2563eb; color:white; text-align:center; padding:12px; border-radius:10px; font-weight:700; font-size:14px; text-decoration:none;">
+            無料で口座開設（5分） →
+          </a>
+        </div>
+      </div>
+
+      <!-- シェア -->
+      <div class="result-card fade-up" style="animation-delay:0.2s; text-align:center;">
+        <p style="font-weight:800; color:#111827; font-size:16px; margin-bottom:4px;">友達にもシェアしよう 📣</p>
+        <p style="font-size:13px; color:#9ca3af; margin-bottom:16px;">新NISAを一緒に始めると続けやすい</p>
+        <button class="btn-share" onclick="shareResult()">
+          <svg width="18" height="18" fill="white" viewBox="0 0 24 24"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+          Xでシェアする
+        </button>
+      </div>
+
+      <!-- もう一度 -->
+      <div style="text-align:center; margin-top:8px;">
+        <button onclick="resetQuiz()" style="font-size:13px; color:#9ca3af; background:none; border:none; cursor:pointer; text-decoration:underline;">もう一度診断する</button>
+      </div>
+
+      <!-- 免責 -->
+      <p style="font-size:11px; color:#9ca3af; text-align:center; margin-top:20px; line-height:1.6;">
+        ※本診断はAIによる参考情報であり投資アドバイスではありません。投資は自己判断でお願いします。<br>
+        制度詳細は<a href="https://www.fsa.go.jp/policy/nisa2/index.html" style="text-decoration:underline;" target="_blank">金融庁公式サイト</a>をご確認ください。
+      </p>
+    </div>
+
+  </main>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>
