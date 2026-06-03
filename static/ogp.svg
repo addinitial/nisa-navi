@@ -1,0 +1,44 @@
+<svg width="1200" height="630" viewBox="0 0 1200 630" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#eff6ff"/>
+      <stop offset="100%" style="stop-color:#dbeafe"/>
+    </linearGradient>
+    <linearGradient id="card" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb"/>
+      <stop offset="100%" style="stop-color:#1d4ed8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 背景 -->
+  <rect width="1200" height="630" fill="url(#bg)"/>
+
+  <!-- メインカード -->
+  <rect x="80" y="80" width="1040" height="470" rx="32" fill="white" filter="drop-shadow(0 8px 32px rgba(37,99,235,0.12))"/>
+
+  <!-- 左アクセント -->
+  <rect x="80" y="80" width="12" height="470" rx="6" fill="url(#card)"/>
+
+  <!-- アイコン -->
+  <rect x="140" y="140" width="72" height="72" rx="18" fill="url(#card)"/>
+  <text x="176" y="193" font-family="sans-serif" font-size="38" font-weight="900" fill="white" text-anchor="middle">N</text>
+
+  <!-- タグ -->
+  <rect x="140" y="232" width="120" height="30" rx="15" fill="#dbeafe"/>
+  <text x="200" y="252" font-family="sans-serif" font-size="14" font-weight="700" fill="#1d4ed8" text-anchor="middle">無料診断</text>
+
+  <!-- メインタイトル -->
+  <text x="140" y="320" font-family="sans-serif" font-size="52" font-weight="900" fill="#111827">あなた専用の</text>
+  <text x="140" y="390" font-family="sans-serif" font-size="52" font-weight="900" fill="#111827">新NISA設定を診断</text>
+
+  <!-- サブテキスト -->
+  <text x="140" y="450" font-family="sans-serif" font-size="26" fill="#6b7280">年齢・積立額・目標を入力するだけ　90秒で完了</text>
+
+  <!-- URL -->
+  <text x="1060" y="520" font-family="sans-serif" font-size="20" fill="#9ca3af" text-anchor="end">nisa-navi.onrender.com</text>
+
+  <!-- 右側アイコン群 -->
+  <text x="950" y="240" font-size="80">📊</text>
+  <text x="1000" y="360" font-size="60">💰</text>
+  <text x="920" y="440" font-size="50">🏦</text>
+</svg>
